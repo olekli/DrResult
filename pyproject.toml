@@ -1,0 +1,20 @@
+[tool.poetry]
+name = "DrResult"
+version = "0.2.1"
+description = ""
+authors = ["Ole Kliemann <mail@olekliemann.de>"]
+license = "MIT"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = ">=3.12"
+
+
+[tool.poetry.group.dev.dependencies]
+black = "^24.8.0"
+pytest = "^8.3.3"
+mypy = "^1.11.2"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
