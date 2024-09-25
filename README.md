@@ -20,24 +20,50 @@ the program.
 
 ### Basic Usage
 
+#### `@noexcept`
+
+If your function knows no errors, you mark it as `@noexcept()`:
+
 ```python
-from drresult import Ok, Err, returns_result
+from drresult import noexcept
 
-@returns_result()
-def read_file():
-    with open('/this/path/is/invalid') as f:
-        return Ok(f.read())
+@noexcept()
+def sum(a: list) -> int:
+    result = 0
+    for item in a:
+        result += item
+    return result
 
-result = func()
+result = func([1, 2, 3])
 ```
-This will raise an `AssertionError` due to an unhandled exception.
 
-But if you specify the exceptions you expect, you can handle the error:
+This will do what you expect it does.
+But if you screw up...
+```python
+@noexcept()
+def sum(a: list) -> int:
+    result = 0
+    for item in a:
+        result += item
+    print(a[7])   # IndexError
+    return result
+
+result = func([1, 2, 3])    # AssertionError
+```
+... then it will raise an `AssertionError` preserving the stack trace and the message of the original exception.
+
+This way all unexpected exceptions are normalised to `AssertionError`.
+
+#### `@returns_result()`
+
+Marking a function as `@returns_result` will wrap its return value in an `Ok` result
+and exceptions thrown in an `Err` result. But only those exceptions that you specify:
+
 ```python
 @returns_result(FileNotFoundError)
-def read_file():
-    with open('/this/path/is/invalid') as f:
-        return Ok(f.read())
+def read_file() -> str:
+    with open('/some/path/that/might/be/invalid') as f:
+        return f.read()
 
 result = func()
 if result.is_ok():
@@ -46,10 +72,27 @@ else:
     print(f'Error: {result.unwrap_err()}')
 ```
 
+This will do as you expect.
+
+
+If fail to specify an exception that is raised...
+
+```python
+from drresult import returns_result
+
+@returns_result(IndexError, KeyError)
+def read_file() -> str:
+    with open('/this/path/is/invalid') as f:
+        return f.read()
+
+result = func()    # AssertionError
+```
+.. it will be re-raised as `AssertionError`.
+
 Or -- if you are feeling fancy -- you can do pattern matching:
 ```python
 @returns_result(FileNotFoundError)
-def read_file():
+def read_file() -> str:
     with open('/this/path/is/invalid') as f:
         return f.read()
 
@@ -63,65 +106,30 @@ match result:
 
 And even fancier:
 ```python
-data = [
-    { 'foo': 'value-1' },
-    { 'bar': 'value-2' }
-]
+data = [{ 'foo': 'value-1' }, { 'bar': 'value-2' }]
 
-@returns_result(IndexError, KeyError)
-def retrieve_record_entry_backend(index, key):
-    return Ok(data[index][key])
+@returns_result(IndexError, KeyError, RuntimeError)
+def retrieve_record_entry_backend(index: int, key: str) -> str:
+    if key == 'baz':
+        raise RuntimeError('Cannot process baz!')
+    return data[index][key]
 
-def retrieve_record_entry(index, key):
-    match retrieve_record_entry_backend(index, key):
+def retrieve_record_entry(index: int, key: str):
+    match retrieve_record_entry_backend(index: int, key: str):
         case Ok(v):
             print(f'Retrieved: {v}')
         case Err(IndexError()):
             print(f'No such record: {index}')
         case Err(KeyError()):
             print(f'No entry `{key}` in record {index}')
+        case Err(RuntimeError() as e):
+            print(f'Error: {e}')
 
 retrieve_record_entry(2, 'foo')    # No such record: 2
 retrieve_record_entry(1, 'foo')    # No entry `foo` in record 1
 retrieve_record_entry(1, 'bar')    # Retrieved: value-2
+retrieve_record_entry(1, 'baz')    # Error: Cannot process baz!
 ```
-
-### Typing
-
-```python
-from typing import NoReturn
-from drresult import Result, Ok, Err, returns_result
-
-data = [{'foo': 'value-1'}, {'bar': 'value-2'}]
-
-
-@returns_result(IndexError, KeyError)
-def retrieve_record_entry_backend(index: int, key: str) -> Result[str, int]:
-    if key == 'baz':
-        return Err(1)
-    return Ok(data[index][key])
-
-
-def retrieve_record_entry(index: int, key: str) -> str:
-    match retrieve_record_entry_backend(index, key):
-        case Ok(v):
-            return f'Retrieved: {v}'
-        case Err(IndexError()):
-            return f'No such record: {index}'
-        case Err(KeyError()):
-            return f'No entry `{key}` in record {index}'
-        case Err(e):
-            return f'Error: {e}'
-        case _:
-            assert False
-
-
-print(retrieve_record_entry(2, 'foo'))
-print(retrieve_record_entry(1, 'foo'))
-print(retrieve_record_entry(1, 'bar'))
-print(retrieve_record_entry(1, 'baz'))
-```
-As you can see from this example, the `@returns_result` decorator extends the return type of the function from `Result[T, E]` to `Result[T, E | Exception]`.
 
 ## Similar Projects
 
