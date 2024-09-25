@@ -3,6 +3,6 @@
 
 from typing import Sequence
 
-from drresult.result import Result, Ok, Err, returns_result
+from drresult.result import Ok, Err, returns_result
 
-__all__: Sequence[str] = ['Result', 'Ok', 'Err', 'returns_result']
+__all__: Sequence[str] = ['Ok', 'Err', 'returns_result']

@@ -1,4 +1,9 @@
-.PHONY: test
+.PHONY: test format
+
+default: format test
+
+format:
+	poetry run black -S drresult test
 
 test:
 	poetry run pytest

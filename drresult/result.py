@@ -3,13 +3,6 @@
 
 from typing import Any, Callable, NoReturn, Optional, Type
 
-type Result[T, E] = Ok[T] | Err[E]
-
-
-class ResultException(Exception):
-    def __init__(self, payload: Any) -> None:
-        self.payload: Any = payload
-
 
 class BaseResult[T]:
     def __init__(self, value: T):
@@ -64,11 +57,11 @@ class Ok[T](BaseResult[T]):
     def unwrap_or[U](self, alternative: U) -> T:
         return self._value
 
-    def unwrap_or_return(self) -> T:
+    def unwrap_or_raise(self) -> T:
         return self._value
 
 
-class Err[E](BaseResult[E]):
+class Err[E: Exception](BaseResult[E]):
     __match_args__ = ('error',)
 
     def __init__(self, error: E) -> None:
@@ -99,31 +92,27 @@ class Err[E](BaseResult[E]):
     def unwrap_or[U](self, alternative: U) -> U:
         return alternative
 
-    def unwrap_or_return(self) -> NoReturn:
-        raise ResultException(self._value)
+    def unwrap_or_raise(self) -> NoReturn:
+        raise self._value
 
 
-type ResultWithException[T, E] = Ok[T] | Err[E] | Err[Exception]
+type Result[T] = Ok[T] | Err[Exception]
 
 
 def returns_result[
-    T, E
+    T
 ](*exceptions_to_catch: Type[Exception]) -> Callable[
-    [Callable[..., Result[T, E]]], Callable[..., ResultWithException[T, E]]
+    [Callable[..., T]], Callable[..., Result[T]]
 ]:
-    def decorator(
-        func: Callable[..., Result[T, E]]
-    ) -> Callable[..., ResultWithException[T, E]]:
-        def wrapper(*args: Any, **kwargs: Any) -> ResultWithException[T, E]:
+    def decorator(func: Callable[..., T]) -> Callable[..., Result[T]]:
+        def wrapper(*args: Any, **kwargs: Any) -> Result[T]:
             try:
                 result = func(*args, **kwargs)
-                return result
+                return Ok(result)
             except Exception as e:
                 match e:
                     case AssertionError():
                         raise
-                    case ResultException():
-                        return Err(e.payload)
                     case _ if isinstance(e, exceptions_to_catch):
                         return Err(e)
                     case _:
