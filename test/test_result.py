@@ -1,7 +1,7 @@
 # Copyright 2024 Ole Kliemann
 # SPDX-License-Identifier: MIT
 
-from drresult import Ok, Err, returns_result
+from drresult import Ok, Err, returns_result, noexcept
 
 import pytest
 
@@ -236,3 +236,22 @@ def test_pattern_matching_with_exceptions_works():
     assert retrieve_record_entry(1, 'foo') == 'No entry `foo` in record 1'
     assert retrieve_record_entry(1, 'bar') == 'Retrieved: value-2'
     assert retrieve_record_entry(4, 'baz') == 'Error: 123'
+
+
+def test_noexcept_returns_when_no_exception():
+    @noexcept()
+    def func() -> str:
+        return 'bar'
+
+    result = func()
+    assert result == 'bar'
+
+
+def test_noexcept_raises_assertion_on_exception():
+    @noexcept()
+    def func() -> str:
+        raise RuntimeError('foo')
+        return 'bar'
+
+    with pytest.raises(AssertionError):
+        result = func()

@@ -3,7 +3,10 @@
 default: format test
 
 format:
-	poetry run black -S drresult test
+	poetry run black \
+		--skip-string-normalization \
+		--line-length 100 \
+			drresult test
 
 test:
 	poetry run pytest

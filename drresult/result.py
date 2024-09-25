@@ -99,11 +99,28 @@ class Err[E: Exception](BaseResult[E]):
 type Result[T] = Ok[T] | Err[Exception]
 
 
+def noexcept[T]() -> Callable[[Callable[..., T]], Callable[..., T]]:
+    def decorator(func: Callable[..., T]) -> Callable[..., T]:
+        def wrapper(*args: Any, **kwargs: Any) -> T:
+            try:
+                result = func(*args, **kwargs)
+                return result
+            except Exception as e:
+                match e:
+                    case AssertionError():
+                        raise
+                    case _:
+                        new_exc = AssertionError(f'Unhandled exception: {str(e)}')
+                        raise new_exc from None
+
+        return wrapper
+
+    return decorator
+
+
 def returns_result[
     T
-](*exceptions_to_catch: Type[Exception]) -> Callable[
-    [Callable[..., T]], Callable[..., Result[T]]
-]:
+](*exceptions_to_catch: Type[Exception]) -> Callable[[Callable[..., T]], Callable[..., Result[T]]]:
     def decorator(func: Callable[..., T]) -> Callable[..., Result[T]]:
         def wrapper(*args: Any, **kwargs: Any) -> Result[T]:
             try:
