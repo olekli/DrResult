@@ -131,6 +131,17 @@ retrieve_record_entry(1, 'bar')    # Retrieved: value-2
 retrieve_record_entry(1, 'baz')    # Error: Cannot process baz!
 ```
 
+#### Implicit conversion to bool
+
+If you are feeling more lazy than fancy, you can do this:
+```python
+result = Ok('foo')
+assert result
+
+result = Err('bar')
+assert not result
+```
+
 ## Similar Projects
 
 For a less extreme approach on Rust's result type, see:

@@ -22,6 +22,12 @@ class BaseResult[T]:
     def __hash__(self) -> int:
         return hash((self.__class__, self._value))
 
+    def is_ok(self) -> bool:
+        assert False
+
+    def __bool__(self) -> bool:
+        return self.is_ok()
+
     def _unexpected(self, msg: Optional[str] = None) -> NoReturn:
         raise AssertionError(f'{self.__str__()}' + (f': {msg}' if msg else ''))
 

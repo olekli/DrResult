@@ -64,6 +64,11 @@ def test_ok_is_not_err():
     assert not result.is_err()
 
 
+def test_ok_is_true():
+    result = Ok('foo')
+    assert result
+
+
 def test_err_is_err():
     result = Err('foo')
     assert result.is_err()
@@ -72,6 +77,11 @@ def test_err_is_err():
 def test_err_is_not_ok():
     result = Err('foo')
     assert not result.is_ok()
+
+
+def test_err_is_false():
+    result = Err('foo')
+    assert not result
 
 
 def test_ok_expects_value():
