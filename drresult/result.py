@@ -124,20 +124,50 @@ def noexcept[T]() -> Callable[[Callable[..., T]], Callable[..., T]]:
     return decorator
 
 
+LanguageLevelExceptions = [
+    AttributeError,
+    ImportError,
+    NameError,
+    SyntaxError,
+    TypeError,
+]
+
+SystemLevelExceptions = [
+    MemoryError,
+    SystemError,
+]
+
+
 def returns_result[
     T
-](*exceptions_to_catch: Type[Exception]) -> Callable[[Callable[..., T]], Callable[..., Result[T]]]:
+](
+    expects=[Exception],
+    raises=Exception,
+    not_expects=LanguageLevelExceptions + SystemLevelExceptions,
+) -> Callable[[Callable[..., T]], Callable[..., Result[T]]]:
+    expects = set(expects).difference(set(not_expects))
+    expects_without_conversion = {e for e in expects if issubclass(e, raises)}
+    expects_with_conversion = expects.difference(expects_without_conversion)
+    expects_without_conversion_tuple = tuple(expects_without_conversion)
+    expects_with_conversion_tuple = tuple(expects_with_conversion)
+    assert len(expects_with_conversion) == 0 or callable(getattr(raises, 'from_other', None))
+
     def decorator(func: Callable[..., T]) -> Callable[..., Result[T]]:
         def wrapper(*args: Any, **kwargs: Any) -> Result[T]:
             try:
                 result = func(*args, **kwargs)
                 return Ok(result)
-            except Exception as e:
+            except BaseException as e:
                 match e:
                     case AssertionError():
                         raise
-                    case _ if isinstance(e, exceptions_to_catch):
+                    case _ if isinstance(e, expects_without_conversion_tuple):
                         return Err(e)
+                    case _ if isinstance(e, expects_with_conversion_tuple):
+                        converted = raises.from_other(e)
+                        if not converted:
+                            raise AssertionError(f'Cannot convert exception: {str(e)}')
+                        return Err(converted.unwrap())
                     case _:
                         new_exc = AssertionError(f'Unhandled exception: {str(e)}')
                         raise new_exc from None

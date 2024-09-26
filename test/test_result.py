@@ -1,6 +1,8 @@
 # Copyright 2024 Ole Kliemann
 # SPDX-License-Identifier: MIT
 
+from typing import Type
+
 from drresult import Ok, Err, returns_result, noexcept
 
 import pytest
@@ -150,7 +152,7 @@ def test_err_unwraps_or_value():
 
 
 def test_err_unwraps_raises():
-    @returns_result(RuntimeError)
+    @returns_result(expects=[RuntimeError])
     def func() -> int:
         result = Err(RuntimeError('foo'))
         result.unwrap_or_raise()
@@ -165,7 +167,7 @@ def test_err_unwraps_raises():
 
 
 def test_err_unwraps_raises_assertion_when_not_specified():
-    @returns_result(FileNotFoundError, SyntaxError)
+    @returns_result(expects=[FileNotFoundError, SyntaxError])
     def func() -> int:
         result = Err(RuntimeError('foo'))
         result.unwrap_or_raise()
@@ -176,7 +178,7 @@ def test_err_unwraps_raises_assertion_when_not_specified():
 
 
 def test_result_decorator_catches_exception_specified():
-    @returns_result(SyntaxError, FileNotFoundError)
+    @returns_result(expects=[SyntaxError, FileNotFoundError])
     def func() -> str:
         raise FileNotFoundError('foo')
         return 'bar'
@@ -188,8 +190,31 @@ def test_result_decorator_catches_exception_specified():
     assert str(result) == 'foo'
 
 
+def test_result_decorator_catches_all_exceptions_by_default():
+    @returns_result()
+    def func() -> str:
+        raise KeyError('foo')
+        return 'bar'
+
+    result = func()
+    assert result.is_err()
+    result = result.unwrap_err()
+    assert isinstance(result, KeyError)
+    assert str(result) == "'foo'"
+
+
+def test_result_decorator_not_catches_assert_by_default():
+    @returns_result()
+    def func() -> str:
+        assert False
+        return 'bar'
+
+    with pytest.raises(AssertionError):
+        result = func()
+
+
 def test_result_decorator_not_catches_exception_not_specified():
-    @returns_result(SyntaxError, KeyError)
+    @returns_result(expects=[SyntaxError, KeyError])
     def func() -> str:
         raise FileNotFoundError('foo')
         return 'bar'
@@ -223,7 +248,7 @@ def test_pattern_matching_err_matches_err():
 def test_pattern_matching_with_exceptions_works():
     data = [{'foo': 'value-1'}, {'bar': 'value-2'}]
 
-    @returns_result(IndexError, KeyError, RuntimeError)
+    @returns_result(expects=[IndexError, KeyError, RuntimeError])
     def retrieve_record_entry_backend(index: int, key: str) -> str:
         if key == 'baz':
             raise RuntimeError(123)
@@ -265,3 +290,35 @@ def test_noexcept_raises_assertion_on_exception():
 
     with pytest.raises(AssertionError):
         result = func()
+
+
+def test_raises_non_baseclass_needs_conversion():
+    class E(Exception):
+        pass
+
+    def func() -> str:
+        raise FileNotFoundError('foo')
+        return 'bar'
+
+    with pytest.raises(AssertionError):
+        decorated = returns_result(expects=[FileNotFoundError], raises=E)
+
+
+def test_raises_non_baseclass_converts_when_conversion_ok():
+    class E(Exception):
+        def __init__(self, s: str):
+            self.s = s
+
+        @classmethod
+        @returns_result()
+        def from_other[T: E](cls: Type[T], e) -> T:
+            return cls(f'E: {str(e)}')
+
+    @returns_result(raises=E)
+    def func() -> str:
+        raise KeyError('foo')
+        return 'bar'
+
+    result = func()
+    assert not result
+    assert result.unwrap_err().s == 'E: \'foo\''
