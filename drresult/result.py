@@ -1,7 +1,7 @@
 # Copyright 2024 Ole Kliemann
 # SPDX-License-Identifier: MIT
 
-from typing import Any, Callable, NoReturn, Optional, Type
+from typing import Any, Callable, NoReturn, Optional, Type, List
 
 
 class BaseResult[T]:
@@ -124,22 +124,44 @@ def noexcept[T]() -> Callable[[Callable[..., T]], Callable[..., T]]:
     return decorator
 
 
+LanguageLevelExceptions = [
+    AttributeError,
+    ImportError,
+    NameError,
+    SyntaxError,
+    TypeError,
+]
+
+SystemLevelExceptions = [
+    MemoryError,
+    SystemError,
+]
+
+
 def returns_result[
     T
-](*exceptions_to_catch: Type[Exception]) -> Callable[[Callable[..., T]], Callable[..., Result[T]]]:
-    def decorator(func: Callable[..., T]) -> Callable[..., Result[T]]:
+](
+    expects: List[Type[Exception]] = [Exception],
+    not_expects: List[Type[Exception]] = LanguageLevelExceptions + SystemLevelExceptions,
+) -> Callable[[Callable[..., Result[T]]], Callable[..., Result[T]]]:
+    expects_set = set(expects).difference(set(not_expects))
+    expects_tuple = tuple(expects)
+
+    def decorator(func: Callable[..., Result[T]]) -> Callable[..., Result[T]]:
         def wrapper(*args: Any, **kwargs: Any) -> Result[T]:
             try:
                 result = func(*args, **kwargs)
-                return Ok(result)
-            except Exception as e:
+                return result
+            except BaseException as e:
                 match e:
                     case AssertionError():
                         raise
-                    case _ if isinstance(e, exceptions_to_catch):
+                    case _ if isinstance(e, expects_tuple):
                         return Err(e)
                     case _:
-                        new_exc = AssertionError(f'Unhandled exception: {str(e)}')
+                        new_exc = AssertionError(f'Unhandled exception: {str(e)}').with_traceback(
+                            e.__traceback__
+                        )
                         raise new_exc from None
 
         return wrapper

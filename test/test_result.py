@@ -1,7 +1,9 @@
 # Copyright 2024 Ole Kliemann
 # SPDX-License-Identifier: MIT
 
-from drresult import Ok, Err, returns_result, noexcept
+from typing import Type
+
+from drresult import Result, Ok, Err, returns_result, noexcept
 
 import pytest
 
@@ -113,10 +115,10 @@ def test_ok_unwraps_value_not_or():
 
 def test_ok_unwraps_value_not_raises():
     @returns_result()
-    def func() -> str:
+    def func() -> Result[str]:
         result = Ok('foo')
         result.unwrap_or_raise()
-        return 'bar'
+        return Ok('bar')
 
     result = func()
     assert result.is_ok() and result.unwrap() == 'bar'
@@ -150,11 +152,11 @@ def test_err_unwraps_or_value():
 
 
 def test_err_unwraps_raises():
-    @returns_result(RuntimeError)
-    def func() -> int:
+    @returns_result(expects=[RuntimeError])
+    def func() -> Result[int]:
         result = Err(RuntimeError('foo'))
         result.unwrap_or_raise()
-        return 5
+        return Ok(5)
 
     result = func()
     assert (
@@ -165,21 +167,21 @@ def test_err_unwraps_raises():
 
 
 def test_err_unwraps_raises_assertion_when_not_specified():
-    @returns_result(FileNotFoundError, SyntaxError)
-    def func() -> int:
+    @returns_result(expects=[FileNotFoundError, SyntaxError])
+    def func() -> Result[int]:
         result = Err(RuntimeError('foo'))
         result.unwrap_or_raise()
-        return 5
+        return Ok(5)
 
     with pytest.raises(AssertionError):
         result = func()
 
 
 def test_result_decorator_catches_exception_specified():
-    @returns_result(SyntaxError, FileNotFoundError)
-    def func() -> str:
+    @returns_result(expects=[SyntaxError, FileNotFoundError])
+    def func() -> Result[str]:
         raise FileNotFoundError('foo')
-        return 'bar'
+        return Ok('bar')
 
     result = func()
     assert result.is_err()
@@ -188,11 +190,34 @@ def test_result_decorator_catches_exception_specified():
     assert str(result) == 'foo'
 
 
+def test_result_decorator_catches_all_exceptions_by_default():
+    @returns_result()
+    def func() -> Result[str]:
+        raise KeyError('foo')
+        return Ok('bar')
+
+    result = func()
+    assert result.is_err()
+    result = result.unwrap_err()
+    assert isinstance(result, KeyError)
+    assert str(result) == "'foo'"
+
+
+def test_result_decorator_not_catches_assert_by_default():
+    @returns_result()
+    def func() -> Result[str]:
+        assert False
+        return Ok('bar')
+
+    with pytest.raises(AssertionError):
+        result = func()
+
+
 def test_result_decorator_not_catches_exception_not_specified():
-    @returns_result(SyntaxError, KeyError)
-    def func() -> str:
+    @returns_result(expects=[SyntaxError, KeyError])
+    def func() -> Result[str]:
         raise FileNotFoundError('foo')
-        return 'bar'
+        return Ok('bar')
 
     with pytest.raises(AssertionError):
         result = func()
@@ -223,11 +248,11 @@ def test_pattern_matching_err_matches_err():
 def test_pattern_matching_with_exceptions_works():
     data = [{'foo': 'value-1'}, {'bar': 'value-2'}]
 
-    @returns_result(IndexError, KeyError, RuntimeError)
-    def retrieve_record_entry_backend(index: int, key: str) -> str:
+    @returns_result(expects=[IndexError, KeyError, RuntimeError])
+    def retrieve_record_entry_backend(index: int, key: str) -> Result[str]:
         if key == 'baz':
             raise RuntimeError(123)
-        return data[index][key]
+        return Ok(data[index][key])
 
     def retrieve_record_entry(index: int, key: str) -> str:
         match retrieve_record_entry_backend(index, key):

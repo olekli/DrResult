@@ -5,7 +5,7 @@ from typing import Type
 
 
 class Some[T]:
-    def __init__(self, value):
+    def __init__(self, value: T) -> None:
         self._value = value
 
     def __repr__(self) -> str:

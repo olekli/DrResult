@@ -10,4 +10,5 @@ format:
 
 test:
 	poetry run pytest
-	poetry run mypy drresult test --enable-incomplete-feature=NewGenericSyntax
+	poetry run mypy drresult test \
+		--enable-incomplete-feature=NewGenericSyntax

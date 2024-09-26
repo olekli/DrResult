@@ -18,6 +18,31 @@ the program.
 
 ## Documentation
 
+### Concept
+
+At each point in your code, there are exceptions that are considered to be expected
+and there are exceptions that are considered unexpected.
+
+In general, an unexpected exception will be mapped to `AssertionError`.
+No part of DrResult will attempt to handle an `AssertionError`.
+And you should leave all exception handling to DrResult,
+i.e. have no `try/except` blocks in your code.
+In any case, you should never catch an `AssertionError`.
+An unexpected exception will therefore result in program termination with stack unwinding.
+
+You will need to specify which exceptions are to be expected.
+There are two modes of operation here:
+You can explicitly name the exceptions to be expected in a function.
+Or you can skip that and basically expect all exceptions.
+
+_Basically_ means: By default only `Exception` is expected, not `BaseException`.
+And even of type `Exception` that are some considered to be never expected:
+```python
+AttributeError, ImportError, MemoryError, NameError, SyntaxError, SystemError, TypeError
+```
+If you do not explicitly expect these, they will be implicitly unexpected.
+(Obviously, the exact list may be up for debate.)
+
 ### Basic Usage
 
 #### `@noexcept`
@@ -54,44 +79,61 @@ result = func([1, 2, 3])    # AssertionError
 
 This way all unexpected exceptions are normalised to `AssertionError`.
 
-#### `@returns_result()`
+Please note that a `@noexecpt` function does not return a result but just the return type itself.
+
+#### `@returns_result()` and `expects`
 
 Marking a function as `@returns_result` will wrap its return value in an `Ok` result
-and exceptions thrown in an `Err` result. But only those exceptions that you specify:
+and exceptions thrown in an `Err` result. But only those exceptions that are expected.
+As noted above, if you do not explicitly specify exceptions to expect,
+most runtime exceptions are expected by default.
 
 ```python
-@returns_result(FileNotFoundError)
-def read_file() -> str:
+@returns_result()
+def read_file() -> Result[str]:
     with open('/some/path/that/might/be/invalid') as f:
-        return f.read()
+        return Ok(f.read())
 
-result = func()
+result = read_file()
 if result.is_ok():
     print(f'File content: {result.unwrap()}')
 else:
-    print(f'Error: {result.unwrap_err()}')
+    print(f'Error: {str(result.unwrap_err())}')
 ```
 
 This will do as you expect.
 
+You can also explicitly specify the exception to expect:
+```python
+@returns_result(expects=[FileNotFoundError])
+def read_file() -> Result[str]:
+    with open('/some/path/that/might/be/invalid') as f:
+        return Ok(f.read())
 
-If fail to specify an exception that is raised...
+result = read_file()
+if result.is_ok():
+    print(f'File content: {result.unwrap()}')
+else:
+    print(f'Error: {str(result.unwrap_err())}')
+```
+This also will do as you expect.
 
+If fail to specify an exception that is raised as expected...
 ```python
 from drresult import returns_result
 
-@returns_result(IndexError, KeyError)
+@returns_result(expects=[IndexError, KeyError])
 def read_file() -> str:
     with open('/this/path/is/invalid') as f:
         return f.read()
 
-result = func()    # AssertionError
+result = read_file()    # AssertionError
 ```
 .. it will be re-raised as `AssertionError`.
 
-Or -- if you are feeling fancy -- you can do pattern matching:
+If you are feeling fancy, you can also do pattern matching:
 ```python
-@returns_result(FileNotFoundError)
+@returns_result(expects=[FileNotFoundError])
 def read_file() -> str:
     with open('/this/path/is/invalid') as f:
         return f.read()
@@ -108,7 +150,7 @@ And even fancier:
 ```python
 data = [{ 'foo': 'value-1' }, { 'bar': 'value-2' }]
 
-@returns_result(IndexError, KeyError, RuntimeError)
+@returns_result(expects=[IndexError, KeyError, RuntimeError])
 def retrieve_record_entry_backend(index: int, key: str) -> str:
     if key == 'baz':
         raise RuntimeError('Cannot process baz!')
@@ -131,6 +173,7 @@ retrieve_record_entry(1, 'bar')    # Retrieved: value-2
 retrieve_record_entry(1, 'baz')    # Error: Cannot process baz!
 ```
 
+
 #### Implicit conversion to bool
 
 If you are feeling more lazy than fancy, you can do this:
@@ -140,6 +183,50 @@ assert result
 
 result = Err('bar')
 assert not result
+```
+
+
+#### `unwrap_or_raise`
+
+You can replicate the behaviour of Rust's `?`-operator with `unwrap_or_raise`:
+```python
+@returns_result()
+def read_json(filename: str) -> str:
+    with open(filename) as f:
+        return json.loads(f.read())
+
+@returns_result()
+def parse_file(filename: str) -> dict:
+    content = read_file(filename).unwrap_or_raise()
+    if not 'required_key' in content:
+        raise KeyError('required_key')
+    return content
+```
+If the result is not `Ok`, `unwrap_or_raise()` will re-raise the contained exception.
+Obviously, this will lead to an assertion if the contained exception is not expected.
+
+
+#### `gather_result`
+
+When you are interfacing with other modules that use exceptions,
+you may want to react to certain exceptions being raised.
+To avoid having to use `try/except` again,
+you can transform exceptions from a part of your code to results:
+
+```python
+@returns_result()
+def parse_json_file(filename: str) -> Result[dict]:
+    with gather_result() as result:
+        with open(filename) as f:
+            result.set(Ok(json.loads(f.read())))
+    result = result.get()
+    match result:
+        case Ok(data):
+            return Ok(data)
+        case Err(FileNotFoundError()):
+            return Ok({})
+        case _:
+            return result
 ```
 
 ## Similar Projects
