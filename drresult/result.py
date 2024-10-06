@@ -66,6 +66,9 @@ class Ok[T](BaseResult[T]):
     def unwrap_or_raise(self) -> T:
         return self._value
 
+    def unwrap_or_return(self) -> T:
+        return self._value
+
 
 class Err[E: Exception](BaseResult[E]):
     __match_args__ = ('error',)
@@ -99,6 +102,9 @@ class Err[E: Exception](BaseResult[E]):
         return alternative
 
     def unwrap_or_raise(self) -> NoReturn:
+        raise self._value
+
+    def unwrap_or_return(self) -> NoReturn:
         raise self._value
 
 
