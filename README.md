@@ -83,8 +83,8 @@ Please note that a `@noexecpt` function does not return a result but just the re
 
 #### `@returns_result()` and `expects`
 
-Marking a function as `@returns_result` will wrap its return value in an `Ok` result
-and exceptions thrown in an `Err` result. But only those exceptions that are expected.
+Marking a function as `@returns_result` will wrap any exceptions thrown in an `Err` result.
+But only those exceptions that are expected.
 As noted above, if you do not explicitly specify exceptions to expect,
 most runtime exceptions are expected by default.
 
@@ -123,9 +123,9 @@ If fail to specify an exception that is raised as expected...
 from drresult import returns_result
 
 @returns_result(expects=[IndexError, KeyError])
-def read_file() -> str:
+def read_file() -> Result[str]:
     with open('/this/path/is/invalid') as f:
-        return f.read()
+        return Ok(f.read())
 
 result = read_file()    # AssertionError
 ```
@@ -134,9 +134,9 @@ result = read_file()    # AssertionError
 If you are feeling fancy, you can also do pattern matching:
 ```python
 @returns_result(expects=[FileNotFoundError])
-def read_file() -> str:
+def read_file() -> Result[str]:
     with open('/this/path/is/invalid') as f:
-        return f.read()
+        return Ok(f.read())
 
 result = read_file()
 match result:
@@ -151,10 +151,10 @@ And even fancier:
 data = [{ 'foo': 'value-1' }, { 'bar': 'value-2' }]
 
 @returns_result(expects=[IndexError, KeyError, RuntimeError])
-def retrieve_record_entry_backend(index: int, key: str) -> str:
+def retrieve_record_entry_backend(index: int, key: str) -> Result[str]:
     if key == 'baz':
         raise RuntimeError('Cannot process baz!')
-    return data[index][key]
+    return Ok(data[index][key])
 
 def retrieve_record_entry(index: int, key: str):
     match retrieve_record_entry_backend(index: int, key: str):
@@ -191,16 +191,16 @@ assert not result
 You can replicate the behaviour of Rust's `?`-operator with `unwrap_or_raise`:
 ```python
 @returns_result()
-def read_json(filename: str) -> str:
+def read_json(filename: str) -> Result[str]:
     with open(filename) as f:
-        return json.loads(f.read())
+        return Ok(json.loads(f.read()))
 
 @returns_result()
-def parse_file(filename: str) -> dict:
+def parse_file(filename: str) -> Result[dict]:
     content = read_file(filename).unwrap_or_raise()
     if not 'required_key' in content:
         raise KeyError('required_key')
-    return content
+    return Ok(content)
 ```
 If the result is not `Ok`, `unwrap_or_raise()` will re-raise the contained exception.
 Obviously, this will lead to an assertion if the contained exception is not expected.
