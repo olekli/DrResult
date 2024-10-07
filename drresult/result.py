@@ -122,7 +122,9 @@ def noexcept[T]() -> Callable[[Callable[..., T]], Callable[..., T]]:
                     case AssertionError():
                         raise
                     case _:
-                        new_exc = AssertionError(f'Unhandled exception: {str(e)}')
+                        new_exc = AssertionError(f'Unhandled exception: {str(e)}').with_traceback(
+                            e.__traceback__
+                        )
                         raise new_exc from None
 
         return wrapper
