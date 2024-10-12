@@ -1,7 +1,9 @@
 # Copyright 2024 Ole Kliemann
 # SPDX-License-Identifier: MIT
 
+from types import TracebackType
 from typing import Any, Callable, NoReturn, Optional, Type, List
+import sys
 import traceback
 
 
@@ -78,10 +80,10 @@ class Err[E: Exception](BaseResult[E]):
         self._value: E = error
 
     def __repr__(self) -> str:
-        return f'{self.__class__.__name__}({"".join(traceback.format_exception_only(self._value))})'
+        return f'{self.__class__.__name__}({format_exception(self._value)})'
 
     def trace(self) -> str:
-        return f'{"".join(traceback.format_exception(self._value))}'
+        return f'{format_traceback(self._value)}{format_exception(self._value)}'
 
     @property
     def error(self) -> E:
@@ -109,10 +111,10 @@ class Err[E: Exception](BaseResult[E]):
         return alternative
 
     def unwrap_or_raise(self) -> NoReturn:
-        raise self._value
+        raise self._value from None
 
     def unwrap_or_return(self) -> NoReturn:
-        raise self._value
+        self.unwrap_or_raise()
 
 
 type Result[T] = Ok[T] | Err[Exception]
@@ -159,11 +161,11 @@ def returns_result[
     expects: List[Type[Exception]] = [Exception],
     not_expects: List[Type[Exception]] = LanguageLevelExceptions + SystemLevelExceptions,
 ) -> Callable[[Callable[..., Result[T]]], Callable[..., Result[T]]]:
-    expects_set = set(expects).difference(set(not_expects))
     expects_tuple = tuple(expects)
+    not_expects_tuple = tuple(not_expects)
 
     def decorator(func: Callable[..., Result[T]]) -> Callable[..., Result[T]]:
-        def wrapper(*args: Any, **kwargs: Any) -> Result[T]:
+        def drresult_wrapper(*args: Any, **kwargs: Any) -> Result[T]:
             try:
                 result = func(*args, **kwargs)
                 return result
@@ -171,14 +173,36 @@ def returns_result[
                 match e:
                     case AssertionError():
                         raise
-                    case _ if isinstance(e, expects_tuple):
+                    case _ if isinstance(e, expects_tuple) and not isinstance(e, not_expects_tuple):
                         return Err(e)
                     case _:
-                        new_exc = AssertionError(f'Unhandled exception: {str(e)}').with_traceback(
+                        new_exc = AssertionError(f'Panic: {format_exception(e)}').with_traceback(
                             e.__traceback__
                         )
                         raise new_exc from None
 
-        return wrapper
+        return drresult_wrapper
 
     return decorator
+
+
+def format_traceback(e: BaseException) -> str:
+    tb = traceback.extract_tb(e.__traceback__)
+    new_tb_list = [
+        frame
+        for frame in tb
+        if frame.name != 'unwrap_or_raise' and frame.name != 'drresult_wrapper'
+    ]
+    trace_to_print = ''.join(traceback.format_list(new_tb_list))
+    return trace_to_print
+
+
+def format_exception(e: BaseException) -> str:
+    return ''.join(traceback.format_exception_only(e))[:-1]
+
+
+def excepthook(type, e, traceback):
+    print(f'{format_traceback(e)}{format_exception(e)}')
+
+
+sys.excepthook = excepthook

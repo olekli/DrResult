@@ -226,6 +226,26 @@ def test_result_decorator_not_catches_assert_by_default():
         result = func()
 
 
+def test_result_decorator_not_catches_not_expected():
+    @returns_result(expects=[KeyError], not_expects=[SystemError, AttributeError])
+    def func() -> Result[str]:
+        x = func.foo
+        return Ok('bar')
+
+    with pytest.raises(AssertionError):
+        result = func()
+
+
+def test_result_decorator_not_catches_not_expected_when_expecting_baseclass():
+    @returns_result(expects=[Exception], not_expects=[SystemError, AttributeError])
+    def func() -> Result[str]:
+        x = func.foo
+        return Ok('bar')
+
+    with pytest.raises(AssertionError):
+        result = func()
+
+
 def test_result_decorator_not_catches_exception_not_specified():
     @returns_result(expects=[SyntaxError, KeyError])
     def func() -> Result[str]:
