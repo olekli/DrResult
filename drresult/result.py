@@ -2,14 +2,12 @@
 # SPDX-License-Identifier: MIT
 
 from typing import Any, Callable, NoReturn, Optional, Type, List
+import traceback
 
 
 class BaseResult[T]:
     def __init__(self, value: T):
         self._value = value
-
-    def __repr__(self) -> str:
-        return f'{self.__class__.__name__}({self._value})'
 
     def __str__(self) -> str:
         return self.__repr__()
@@ -37,6 +35,9 @@ class Ok[T](BaseResult[T]):
 
     def __init__(self, value: T) -> None:
         self._value: T = value
+
+    def __repr__(self) -> str:
+        return f'{self.__class__.__name__}({self._value})'
 
     @property
     def value(self) -> T:
@@ -75,6 +76,12 @@ class Err[E: Exception](BaseResult[E]):
 
     def __init__(self, error: E) -> None:
         self._value: E = error
+
+    def __repr__(self) -> str:
+        return f'{self.__class__.__name__}({"".join(traceback.format_exception_only(self._value))})'
+
+    def trace(self) -> str:
+        return f'{"".join(traceback.format_exception(self._value))}'
 
     @property
     def error(self) -> E:

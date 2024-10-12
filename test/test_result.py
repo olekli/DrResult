@@ -8,6 +8,19 @@ from drresult import Result, Ok, Err, returns_result, noexcept
 import pytest
 
 
+class DummyException(Exception):
+    def __init__(self, payload: str):
+        self.payload = payload
+
+    def __eq__(lhs, rhs) -> bool:
+        if not isinstance(rhs, DummyException):
+            return NotImplemented
+        return lhs.payload == rhs.payload
+
+    def __hash__(self) -> int:
+        return hash(self.payload)
+
+
 def test_equal_ok_is_equal():
     lhs = Ok('foo')
     rhs = Ok('foo')
@@ -21,20 +34,20 @@ def test_different_ok_is_not_equal():
 
 
 def test_equal_err_is_equal():
-    lhs = Err('foo')
-    rhs = Err('foo')
+    lhs = Err(DummyException('foo'))
+    rhs = Err(DummyException('foo'))
     assert lhs == rhs
 
 
 def test_different_err_result_is_not_equal():
-    lhs = Err('foo')
-    rhs = Err('bar')
+    lhs = Err(DummyException('foo'))
+    rhs = Err(DummyException('bar'))
     assert not (lhs == rhs)
 
 
 def test_equal_value_ok_err_is_not_equal():
     lhs = Ok('foo')
-    rhs = Err('foo')
+    rhs = Err(DummyException('foo'))
     assert not (lhs == rhs)
 
 
@@ -52,7 +65,7 @@ def test_different_ok_has_different_hash():
 
 def test_equal_value_ok_err_has_different_hash():
     lhs = Ok('foo')
-    rhs = Err('foo')
+    rhs = Err(DummyException('foo'))
     assert not (hash(lhs) == hash(rhs))
 
 
@@ -72,17 +85,17 @@ def test_ok_is_true():
 
 
 def test_err_is_err():
-    result = Err('foo')
+    result = Err(DummyException('foo'))
     assert result.is_err()
 
 
 def test_err_is_not_ok():
-    result = Err('foo')
+    result = Err(DummyException('foo'))
     assert not result.is_ok()
 
 
 def test_err_is_false():
-    result = Err('foo')
+    result = Err(DummyException('foo'))
     assert not result
 
 
@@ -125,29 +138,29 @@ def test_ok_unwraps_value_not_raises():
 
 
 def test_err_not_expects():
-    result = Err('foo')
+    result = Err(DummyException('foo'))
     with pytest.raises(AssertionError):
         result.expect('bar')
 
 
 def test_err_not_unwraps():
-    result = Err('foo')
+    result = Err(DummyException('foo'))
     with pytest.raises(AssertionError):
         result.unwrap()
 
 
 def test_err_expects_err_value():
-    result = Err('foo')
-    assert result.expect_err('bar') == 'foo'
+    result = Err(DummyException('foo'))
+    assert result.expect_err('bar') == DummyException('foo')
 
 
 def test_err_unwraps_err_value():
-    result = Err('foo')
-    assert result.unwrap_err() == 'foo'
+    result = Err(DummyException('foo'))
+    assert result.unwrap_err() == DummyException('foo')
 
 
 def test_err_unwraps_or_value():
-    result = Err('foo')
+    result = Err(DummyException('foo'))
     assert result.unwrap_or('bar') == 'bar'
 
 
