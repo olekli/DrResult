@@ -1,6 +1,7 @@
 # Copyright 2024 Ole Kliemann
 # SPDX-License-Identifier: MIT
 
+from types import TracebackType
 from typing import Any, Callable, NoReturn, Optional, Type, List
 import traceback
 
@@ -78,10 +79,13 @@ class Err[E: Exception](BaseResult[E]):
         self._value: E = error
 
     def __repr__(self) -> str:
-        return f'{self.__class__.__name__}({"".join(traceback.format_exception_only(self._value))})'
+        return f'{self.__class__.__name__}({"".join(traceback.format_exception_only(self._value))[:-1]})'
 
     def trace(self) -> str:
-        return f'{"".join(traceback.format_exception(self._value))}'
+        tb = traceback.extract_tb(self._value.__traceback__)
+        new_tb_list = [frame for frame in tb if frame.name != 'unwrap_or_raise']
+        trace_to_print = ''.join(traceback.format_list(new_tb_list))
+        return f'{trace_to_print}{"".join(traceback.format_exception_only(self._value))[:-1]}'
 
     @property
     def error(self) -> E:
@@ -109,10 +113,10 @@ class Err[E: Exception](BaseResult[E]):
         return alternative
 
     def unwrap_or_raise(self) -> NoReturn:
-        raise self._value
+        raise self._value from None
 
     def unwrap_or_return(self) -> NoReturn:
-        raise self._value
+        self.unwrap_or_raise()
 
 
 type Result[T] = Ok[T] | Err[Exception]
@@ -153,6 +157,18 @@ SystemLevelExceptions = [
 ]
 
 
+def remove_last_frame(tb):
+    if tb is None or tb.tb_next is None:
+        return None
+    else:
+        return TracebackType(
+            tb_next=remove_last_frame(tb.tb_next),
+            tb_frame=tb.tb_frame,
+            tb_lasti=tb.tb_lasti,
+            tb_lineno=tb.tb_lineno,
+        )
+
+
 def returns_result[
     T
 ](
@@ -172,7 +188,8 @@ def returns_result[
                     case AssertionError():
                         raise
                     case _ if isinstance(e, expects_tuple):
-                        return Err(e)
+                        new_tb = e.__traceback__.tb_next if e.__traceback__ else None
+                        return Err(e.with_traceback(new_tb))
                     case _:
                         new_exc = AssertionError(f'Unhandled exception: {str(e)}').with_traceback(
                             e.__traceback__
