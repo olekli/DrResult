@@ -3,7 +3,8 @@
 
 from typing import Sequence
 
-from drresult.result import Result, Ok, Err, noexcept, returns_result
+from drresult.result import Result, Ok, Err
+from drresult.function_decorators import noexcept, returns_result
 from drresult.option import Some
 from drresult.gather_result import gather_result
 
