@@ -9,25 +9,21 @@ import traceback
 from drresult.result import Result, Err, format_exception, format_traceback
 
 
-def noexcept[T]() -> Callable[[Callable[..., T]], Callable[..., T]]:
-    def decorator(func: Callable[..., T]) -> Callable[..., T]:
-        def wrapper(*args: Any, **kwargs: Any) -> T:
-            try:
-                result = func(*args, **kwargs)
-                return result
-            except Exception as e:
-                match e:
-                    case AssertionError():
-                        raise
-                    case _:
-                        new_exc = AssertionError(f'Unhandled exception: {str(e)}').with_traceback(
-                            e.__traceback__
-                        )
-                        raise new_exc from None
+def noexcept[T](func: Callable[..., T]) -> Callable[..., T]:
+    def wrapper(*args: Any, **kwargs: Any) -> T:
+        try:
+            return func(*args, **kwargs)
+        except Exception as e:
+            match e:
+                case AssertionError():
+                    raise
+                case _:
+                    new_exc = AssertionError(f'Unhandled exception: {str(e)}').with_traceback(
+                        e.__traceback__
+                    )
+                    raise new_exc from None
 
-        return wrapper
-
-    return decorator
+    return wrapper
 
 
 LanguageLevelExceptions = [

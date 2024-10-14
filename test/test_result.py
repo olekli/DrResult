@@ -307,7 +307,7 @@ def test_pattern_matching_with_exceptions_works():
 
 
 def test_noexcept_returns_when_no_exception():
-    @noexcept()
+    @noexcept
     def func() -> str:
         return 'bar'
 
@@ -316,7 +316,7 @@ def test_noexcept_returns_when_no_exception():
 
 
 def test_noexcept_raises_assertion_on_exception():
-    @noexcept()
+    @noexcept
     def func() -> str:
         raise RuntimeError('foo')
         return 'bar'
