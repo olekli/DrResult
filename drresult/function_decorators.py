@@ -12,15 +12,13 @@ def noexcept[T](func: Callable[..., T]) -> Callable[..., T]:
     def wrapper(*args: Any, **kwargs: Any) -> T:
         try:
             return func(*args, **kwargs)
-        except Exception as e:
-            match e:
-                case AssertionError():
-                    raise
-                case _:
-                    new_exc = AssertionError(f'Unhandled exception: {str(e)}').with_traceback(
-                        e.__traceback__
-                    )
-                    raise new_exc from None
+        except AssertionError:
+            raise
+        except BaseException as e:
+            new_exc = AssertionError(f'Unhandled exception: {str(e)}').with_traceback(
+                e.__traceback__
+            )
+            raise new_exc from None
 
     return wrapper
 
@@ -57,17 +55,20 @@ def make_drresult_returns_result_decorator[
         def drresult_returns_result_wrapper(*args: Any, **kwargs: Any) -> Result[T]:
             try:
                 return func(*args, **kwargs)
+            except AssertionError:
+                raise
+            except not_expects_tuple as e:
+                new_exc = AssertionError(f'Panic: {format_exception(e)}').with_traceback(
+                    e.__traceback__
+                )
+                raise new_exc from None
+            except expects_tuple as e:
+                return Err(e)
             except BaseException as e:
-                match e:
-                    case AssertionError():
-                        raise
-                    case _ if isinstance(e, expects_tuple) and not isinstance(e, not_expects_tuple):
-                        return Err(e)
-                    case _:
-                        new_exc = AssertionError(f'Panic: {format_exception(e)}').with_traceback(
-                            e.__traceback__
-                        )
-                        raise new_exc from None
+                new_exc = AssertionError(f'Panic: {format_exception(e)}').with_traceback(
+                    e.__traceback__
+                )
+                raise new_exc from None
 
         return drresult_returns_result_wrapper
 
