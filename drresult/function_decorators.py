@@ -5,25 +5,23 @@ from types import TracebackType
 from typing import Any, Callable, NoReturn, Type, List
 import traceback
 
-from drresult.result import Result, Err, format_exception, format_traceback
+from drresult.result import Result, Err, format_exception, format_traceback, Panic
 
 
 def noexcept[T](func: Callable[..., T]) -> Callable[..., T]:
     def wrapper(*args: Any, **kwargs: Any) -> T:
         try:
             return func(*args, **kwargs)
-        except AssertionError:
+        except Panic:
             raise
         except BaseException as e:
-            new_exc = AssertionError(f'Unhandled exception: {str(e)}').with_traceback(
-                e.__traceback__
-            )
-            raise new_exc from None
+            raise Panic(e)
 
     return wrapper
 
 
-LanguageLevelExceptions = [
+LanguageLevelExceptions: List[Type[BaseException]] = [
+    AssertionError,
     AttributeError,
     ImportError,
     NameError,
@@ -31,20 +29,20 @@ LanguageLevelExceptions = [
     TypeError,
 ]
 
-SystemLevelExceptions = [
+SystemLevelExceptions: List[Type[BaseException]] = [
     MemoryError,
     SystemError,
 ]
 
-expects_default = [Exception]
-not_expects_default = LanguageLevelExceptions + SystemLevelExceptions
+expects_default: List[Type[BaseException]] = [Exception]
+not_expects_default: List[Type[BaseException]] = LanguageLevelExceptions + SystemLevelExceptions
 
 
 def make_drresult_returns_result_decorator[
     T
 ](
-    expects: List[Type[Exception]] = expects_default,
-    not_expects: List[Type[Exception]] = not_expects_default,
+    expects: List[Type[BaseException]] = expects_default,
+    not_expects: List[Type[BaseException]] = not_expects_default,
 ) -> Callable[[Callable[..., Result[T]]], Callable[..., Result[T]]]:
     expects_tuple = tuple(expects)
     not_expects_tuple = tuple(not_expects)
@@ -55,20 +53,14 @@ def make_drresult_returns_result_decorator[
         def drresult_returns_result_wrapper(*args: Any, **kwargs: Any) -> Result[T]:
             try:
                 return func(*args, **kwargs)
-            except AssertionError:
+            except Panic:
                 raise
             except not_expects_tuple as e:
-                new_exc = AssertionError(f'Panic: {format_exception(e)}').with_traceback(
-                    e.__traceback__
-                )
-                raise new_exc from None
+                raise Panic(e)
             except expects_tuple as e:
                 return Err(e)
             except BaseException as e:
-                new_exc = AssertionError(f'Panic: {format_exception(e)}').with_traceback(
-                    e.__traceback__
-                )
-                raise new_exc from None
+                raise Panic(e)
 
         return drresult_returns_result_wrapper
 

@@ -9,8 +9,8 @@ from drresult.function_decorators import returns_result, expects_default, not_ex
 def make_drresult_constructs_as_result_decorator[
     T
 ](
-    expects: List[Type[Exception]] = expects_default,
-    not_expects: List[Type[Exception]] = not_expects_default,
+    expects: List[Type[BaseException]] = expects_default,
+    not_expects: List[Type[BaseException]] = not_expects_default,
 ) -> Callable[[Type[T]], Type[T]]:
     def make_drresult_constructs_as_result_wrapper(cls: Type[T]) -> Type[T]:
         Base = type(cls)  # type: Any

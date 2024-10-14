@@ -11,8 +11,7 @@ A possible error condition is either one that has no prospect of being handled
 -- then the program should terminate -- or it is one that could be handled --
 then it has to be handled or explicitly ignored.
 
-This concept is replicated here by using `AssertionError` to emulate Rust's `panic!`,
-mapping all unhandled exceptions to `AssertionError`
+This concept is replicated here by using mapping all unhandled exceptions to `Panic`
 and providing a Rust-like `result` type to signal error conditions that do not need to terminate
 the program.
 
@@ -23,11 +22,11 @@ the program.
 At each point in your code, there are exceptions that are considered to be expected
 and there are exceptions that are considered unexpected.
 
-In general, an unexpected exception will be mapped to `AssertionError`.
-No part of DrResult will attempt to handle an `AssertionError`.
+In general, an unexpected exception will be mapped to `Panic`.
+No part of DrResult will attempt to handle a `Panic` exception.
 And you should leave all exception handling to DrResult,
 i.e. have no `try/except` blocks in your code.
-In any case, you should never catch an `AssertionError`.
+In any case, you should never catch `Panic`.
 An unexpected exception will therefore result in program termination with stack unwinding.
 
 You will need to specify which exceptions are to be expected.
@@ -38,7 +37,7 @@ Or you can skip that and basically expect all exceptions.
 _Basically_ means: By default only `Exception` is expected, not `BaseException`.
 And even of type `Exception` that are some considered to be never expected:
 ```python
-AttributeError, ImportError, MemoryError, NameError, SyntaxError, SystemError, TypeError
+AssertionError, AttributeError, ImportError, MemoryError, NameError, SyntaxError, SystemError, TypeError
 ```
 If you do not explicitly expect these, they will be implicitly unexpected.
 (Obviously, the exact list may be up for debate.)
@@ -73,11 +72,11 @@ def sum(a: list) -> int:
     print(a[7])   # IndexError
     return result
 
-result = func([1, 2, 3])    # AssertionError
+result = func([1, 2, 3])    # Panic!
 ```
-... then it will raise an `AssertionError` preserving the stack trace and the message of the original exception.
+... then it will raise `Panic` preserving the stack trace and the original exception.
 
-This way all unexpected exceptions are normalised to `AssertionError`.
+This way all unexpected exceptions are normalised to `Panic`.
 
 Please note that a `@noexecpt` function does not return a result but just the return type itself.
 
@@ -127,9 +126,9 @@ def read_file() -> Result[str]:
     with open('/this/path/is/invalid') as f:
         return Ok(f.read())
 
-result = read_file()    # AssertionError
+result = read_file()    # Panic!
 ```
-.. it will be re-raised as `AssertionError`.
+.. it will be re-raised as `Panic`.
 
 If you are feeling fancy, you can also do pattern matching:
 ```python

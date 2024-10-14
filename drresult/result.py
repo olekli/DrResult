@@ -72,7 +72,7 @@ class Ok[T](BaseResult[T]):
         return self._value
 
 
-class Err[E: Exception](BaseResult[E]):
+class Err[E: BaseException](BaseResult[E]):
     __match_args__ = ('error',)
 
     def __init__(self, error: E) -> None:
@@ -116,7 +116,7 @@ class Err[E: Exception](BaseResult[E]):
         self.unwrap_or_raise()
 
 
-type Result[T] = Ok[T] | Err[Exception]
+type Result[T] = Ok[T] | Err[BaseException]
 
 
 def filter_traceback(e: BaseException) -> List[traceback.FrameSummary]:
@@ -156,3 +156,15 @@ def excepthook(type, e, traceback):
 
 
 sys.excepthook = excepthook
+
+
+class Panic(Exception):
+    def __init__(self, unhandled_exception: BaseException):
+        self.unhandled_exception = unhandled_exception
+        self.__traceback__ = self.unhandled_exception.__traceback__
+
+    def __repr__(self) -> str:
+        return f'{format_traceback(self.unhandled_exception)}Panic: {format_exception(self.unhandled_exception)}'
+
+    def __str__(self) -> str:
+        return self.__repr__()

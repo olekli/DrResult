@@ -3,7 +3,7 @@
 
 from typing import Type
 
-from drresult import Result, Ok, Err, returns_result, noexcept
+from drresult import Result, Ok, Err, returns_result, noexcept, Panic
 
 import pytest
 
@@ -197,7 +197,7 @@ def test_err_unwraps_raises_assertion_when_not_specified():
         result.unwrap_or_raise()
         return Ok(5)
 
-    with pytest.raises(AssertionError):
+    with pytest.raises(Panic):
         result = func()
 
 
@@ -246,7 +246,7 @@ def test_result_decorator_not_catches_assert_by_default():
         assert False
         return Ok('bar')
 
-    with pytest.raises(AssertionError):
+    with pytest.raises(Panic):
         result = func()
 
 
@@ -256,7 +256,7 @@ def test_result_decorator_not_catches_assert_by_default_decorator_default():
         assert False
         return Ok('bar')
 
-    with pytest.raises(AssertionError):
+    with pytest.raises(Panic):
         result = func()
 
 
@@ -266,7 +266,7 @@ def test_result_decorator_not_catches_not_expected():
         x = func.foo
         return Ok('bar')
 
-    with pytest.raises(AssertionError):
+    with pytest.raises(Panic):
         result = func()
 
 
@@ -276,7 +276,7 @@ def test_result_decorator_not_catches_not_expected_when_expecting_baseclass():
         x = func.foo
         return Ok('bar')
 
-    with pytest.raises(AssertionError):
+    with pytest.raises(Panic):
         result = func()
 
 
@@ -286,7 +286,7 @@ def test_result_decorator_not_catches_exception_not_specified():
         raise FileNotFoundError('foo')
         return Ok('bar')
 
-    with pytest.raises(AssertionError):
+    with pytest.raises(Panic):
         result = func()
 
 
@@ -355,5 +355,5 @@ def test_noexcept_raises_assertion_on_exception():
         raise RuntimeError('foo')
         return 'bar'
 
-    with pytest.raises(AssertionError):
+    with pytest.raises(Panic):
         result = func()

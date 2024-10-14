@@ -3,7 +3,7 @@
 
 from typing import Type
 
-from drresult import gather_result, Ok, Err, returns_result, Result
+from drresult import gather_result, Ok, Err, returns_result, Result, Panic
 
 import pytest
 import os
@@ -35,14 +35,14 @@ def test_expected_error_receives_err():
 
 
 def test_unexpected_error_raises_assertion():
-    with pytest.raises(AssertionError):
+    with pytest.raises(Panic):
         with gather_result(expects=[IndexError, KeyError]) as result:
             result.set(Ok('foo'))
             raise RuntimeError('bar')
 
 
 def test_assertion_is_unhandled():
-    with pytest.raises(AssertionError):
+    with pytest.raises(Panic):
         with gather_result() as result:
             assert False
             result.set(Ok('foo'))

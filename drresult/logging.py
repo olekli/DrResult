@@ -3,14 +3,15 @@
 
 from contextlib import contextmanager
 from drresult.gather_result import gather_result
-from drresult.result import format_traceback_exception
+from drresult.result import Panic
+import logging
 
 
 @contextmanager
-def log_panic(logger):
+def log_panic(logger: logging.Logger):
     try:
-        with gather_result(expects=[], not_expects=[BaseException]):
+        with gather_result(expects=[], not_expects=[BaseException]) as result:
             yield
-    except AssertionError as e:
-        logger.critical(f'{format_traceback_exception(e)}')
+    except Panic as e:
+        logger.critical(f'{e}')
         raise

@@ -1,7 +1,7 @@
 # Copyright 2024 Ole Kliemann
 # SPDX-License-Identifier: MIT
 
-from drresult import constructs_as_result
+from drresult import constructs_as_result, Panic
 
 import pytest
 
@@ -47,7 +47,7 @@ def test_standard_exceptions_produce_err():
 
 
 def test_non_standard_exception_panics():
-    with pytest.raises(AssertionError):
+    with pytest.raises(Panic):
         a = A(SystemError('foo'))
 
 
@@ -79,10 +79,10 @@ def test_standard_exceptions_produce_err_with_expects():
 
 
 def test_not_expected_exception_panics_with_expects():
-    with pytest.raises(AssertionError):
+    with pytest.raises(Panic):
         b = B(KeyError('foo'))
 
 
 def test_non_standard_exception_panics_with_expects():
-    with pytest.raises(AssertionError):
+    with pytest.raises(Panic):
         b = B(SystemError('foo'))

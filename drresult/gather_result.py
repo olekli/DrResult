@@ -3,7 +3,7 @@
 
 from typing import List, Type, Tuple
 
-from drresult.result import Result, Ok, Err
+from drresult.result import Result, Ok, Err, Panic
 from drresult.function_decorators import expects_default, not_expects_default
 
 
@@ -24,11 +24,11 @@ class ResultContainer[T]:
 class gather_result[T]:
     def __init__(
         self,
-        expects: List[Type[Exception]] = expects_default,
-        not_expects: List[Type[Exception]] = not_expects_default,
+        expects: List[Type[BaseException]] = expects_default,
+        not_expects: List[Type[BaseException]] = not_expects_default,
     ):
-        self._expects: Tuple[Type[Exception], ...] = tuple(expects)
-        self._not_expects: Tuple[Type[Exception], ...] = tuple(not_expects)
+        self._expects: Tuple[Type[BaseException], ...] = tuple(expects)
+        self._not_expects: Tuple[Type[BaseException], ...] = tuple(not_expects)
         self._container: ResultContainer[T] = ResultContainer[T]()
 
     def __enter__(self):
@@ -38,17 +38,13 @@ class gather_result[T]:
         match exc_value:
             case None:
                 pass
-            case AssertionError():
+            case Panic():
                 return False
             case _ if isinstance(exc_value, self._not_expects):
-                new_exc = AssertionError(f'Unhandled exception: {str(exc_value)}')
-                new_exc = new_exc.with_traceback(traceback)
-                raise new_exc from None
+                raise Panic(exc_value)
             case _ if isinstance(exc_value, self._expects):
                 self._container.set(Err(exc_value))
             case _:
-                new_exc = AssertionError(f'Unhandled exception: {str(exc_value)}')
-                new_exc = new_exc.with_traceback(traceback)
-                raise new_exc from None
+                raise Panic(exc_value)
         self._container._finalized = True
         return True

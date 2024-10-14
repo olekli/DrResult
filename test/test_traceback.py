@@ -1,7 +1,7 @@
 # Copyright 2024 Ole Kliemann
 # SPDX-License-Identifier: MIT
 
-from drresult import returns_result, constructs_as_result, log_panic
+from drresult import returns_result, constructs_as_result, log_panic, Panic
 from drresult.result import filter_traceback
 
 import traceback
@@ -26,7 +26,7 @@ def test_traceback_on_panic():
     exc = None
     try:
         result = f1()
-    except AssertionError as e:
+    except Panic as e:
         exc = e
 
     assert exc
@@ -85,7 +85,7 @@ def test_traceback_on_panic_in_constructor():
     exc = None
     try:
         a = A()
-    except AssertionError as e:
+    except Panic as e:
         exc = e
 
     assert exc
@@ -137,7 +137,7 @@ def test_log_panic():
             self.msg = msg
 
     logger = DummyLogger()
-    with pytest.raises(AssertionError):
+    with pytest.raises(Panic):
         with log_panic(logger):
             result = Err(KeyError('foo'))
             result.unwrap_or_raise()
