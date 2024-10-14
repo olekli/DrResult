@@ -39,21 +39,25 @@ SystemLevelExceptions = [
     SystemError,
 ]
 
+expects_default = [Exception]
+not_expects_default = LanguageLevelExceptions + SystemLevelExceptions
 
-def returns_result[
+
+def make_drresult_returns_result_decorator[
     T
 ](
-    expects: List[Type[Exception]] = [Exception],
-    not_expects: List[Type[Exception]] = LanguageLevelExceptions + SystemLevelExceptions,
+    expects: List[Type[Exception]] = expects_default,
+    not_expects: List[Type[Exception]] = not_expects_default,
 ) -> Callable[[Callable[..., Result[T]]], Callable[..., Result[T]]]:
     expects_tuple = tuple(expects)
     not_expects_tuple = tuple(not_expects)
 
-    def decorator(func: Callable[..., Result[T]]) -> Callable[..., Result[T]]:
-        def drresult_wrapper(*args: Any, **kwargs: Any) -> Result[T]:
+    def make_drresult_returns_result_wrapper(
+        func: Callable[..., Result[T]]
+    ) -> Callable[..., Result[T]]:
+        def drresult_returns_result_wrapper(*args: Any, **kwargs: Any) -> Result[T]:
             try:
-                result = func(*args, **kwargs)
-                return result
+                return func(*args, **kwargs)
             except BaseException as e:
                 match e:
                     case AssertionError():
@@ -66,9 +70,22 @@ def returns_result[
                         )
                         raise new_exc from None
 
-        return drresult_wrapper
+        return drresult_returns_result_wrapper
 
-    return decorator
+    return make_drresult_returns_result_wrapper
+
+
+def returns_result[
+    T
+](*decorator_args: Any, **decorator_kwargs: Any) -> (
+    Callable[..., Result[T]] | Callable[[Callable[..., Result[T]]], Callable[..., Result[T]]]
+):
+    if len(decorator_args) == 1 and callable(decorator_args[0]) and not decorator_kwargs:
+        return make_drresult_returns_result_decorator(expects_default, not_expects_default)(
+            decorator_args[0]
+        )
+    else:
+        return make_drresult_returns_result_decorator(**decorator_kwargs)
 
 
 def excepthook(type, e, traceback):

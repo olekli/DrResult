@@ -137,6 +137,17 @@ def test_ok_unwraps_value_not_raises():
     assert result.is_ok() and result.unwrap() == 'bar'
 
 
+def test_ok_unwraps_value_not_raises_decorator_default():
+    @returns_result
+    def func() -> Result[str]:
+        result = Ok('foo')
+        result.unwrap_or_raise()
+        return Ok('bar')
+
+    result = func()
+    assert result.is_ok() and result.unwrap() == 'bar'
+
+
 def test_err_not_expects():
     result = Err(DummyException('foo'))
     with pytest.raises(AssertionError):
@@ -216,8 +227,31 @@ def test_result_decorator_catches_all_exceptions_by_default():
     assert str(result) == "'foo'"
 
 
+def test_result_decorator_catches_all_exceptions_by_default_decorator_default():
+    @returns_result
+    def func() -> Result[str]:
+        raise KeyError('foo')
+        return Ok('bar')
+
+    result = func()
+    assert result.is_err()
+    result = result.unwrap_err()
+    assert isinstance(result, KeyError)
+    assert str(result) == "'foo'"
+
+
 def test_result_decorator_not_catches_assert_by_default():
     @returns_result()
+    def func() -> Result[str]:
+        assert False
+        return Ok('bar')
+
+    with pytest.raises(AssertionError):
+        result = func()
+
+
+def test_result_decorator_not_catches_assert_by_default_decorator_default():
+    @returns_result
     def func() -> Result[str]:
         assert False
         return Ok('bar')

@@ -123,7 +123,7 @@ def format_traceback(e: BaseException) -> str:
     new_tb_list = [
         frame
         for frame in tb
-        if frame.name != 'unwrap_or_raise' and frame.name != 'drresult_wrapper'
+        if frame.name != 'unwrap_or_raise' and frame.name != 'drresult_returns_result_wrapper'
     ]
     trace_to_print = ''.join(traceback.format_list(new_tb_list))
     return trace_to_print
