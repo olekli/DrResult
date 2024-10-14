@@ -1,7 +1,7 @@
 # Copyright 2024 Ole Kliemann
 # SPDX-License-Identifier: MIT
 
-from typing import NoReturn, Optional
+from typing import NoReturn, Optional, List
 import traceback
 
 
@@ -118,13 +118,17 @@ class Err[E: Exception](BaseResult[E]):
 type Result[T] = Ok[T] | Err[Exception]
 
 
-def format_traceback(e: BaseException) -> str:
+def filter_traceback(e: BaseException) -> List[traceback.FrameSummary]:
     tb = traceback.extract_tb(e.__traceback__)
-    new_tb_list = [
+    return [
         frame
         for frame in tb
         if frame.name != 'unwrap_or_raise' and frame.name != 'drresult_returns_result_wrapper'
     ]
+
+
+def format_traceback(e: BaseException) -> str:
+    new_tb_list = filter_traceback(e)
     trace_to_print = ''.join(traceback.format_list(new_tb_list))
     return trace_to_print
 
