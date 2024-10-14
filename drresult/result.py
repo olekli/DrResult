@@ -147,8 +147,12 @@ def format_exception(e: BaseException) -> str:
     return ''.join(traceback.format_exception_only(e))[:-1]
 
 
+def format_traceback_exception(e: BaseException) -> str:
+    return f'{format_traceback(e)}{format_exception(e)}'
+
+
 def excepthook(type, e, traceback):
-    print(f'{format_traceback(e)}{format_exception(e)}')
+    print(f'{format_exception_traceback(e)}')
 
 
 sys.excepthook = excepthook

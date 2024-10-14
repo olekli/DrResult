@@ -1,7 +1,7 @@
 # Copyright 2024 Ole Kliemann
 # SPDX-License-Identifier: MIT
 
-from drresult import returns_result, constructs_as_result
+from drresult import returns_result, constructs_as_result, log_panic
 from drresult.result import filter_traceback
 
 import traceback
@@ -126,3 +126,20 @@ def test_traceback_from_err_in_constructor():
     assert tb[1].name == 'f1'
     assert tb[2].name == 'f2'
     assert tb[3].name == 'f3'
+
+
+def test_log_panic():
+    class DummyLogger:
+        def __init__(self):
+            self.msg = None
+
+        def critical(self, msg):
+            self.msg = msg
+
+    logger = DummyLogger()
+    with pytest.raises(AssertionError):
+        with log_panic(logger):
+            result = Err(KeyError('foo'))
+            result.unwrap_or_raise()
+    assert logger.msg
+    assert 'KeyError' in logger.msg and 'foo' in logger.msg

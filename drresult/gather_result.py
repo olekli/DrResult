@@ -22,7 +22,11 @@ class ResultContainer[T]:
 
 
 class gather_result[T]:
-    def __init__(self, expects: List[Type[Exception]] = expects_default, not_expects: List[Type[Exception]]=not_expects_default):
+    def __init__(
+        self,
+        expects: List[Type[Exception]] = expects_default,
+        not_expects: List[Type[Exception]] = not_expects_default,
+    ):
         self._expects: Tuple[Type[Exception], ...] = tuple(expects)
         self._not_expects: Tuple[Type[Exception], ...] = tuple(not_expects)
         self._container: ResultContainer[T] = ResultContainer[T]()
