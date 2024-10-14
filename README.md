@@ -229,6 +229,34 @@ def parse_json_file(filename: str) -> Result[dict]:
             return result
 ```
 
+#### Printing the Stack Trace
+
+If you want to format the exception stored in `Err`,
+you can use `Err.__str__()` and `Err.trace()`.
+The former will just provide the error message itself
+where the latter will provide the entire stack trace.
+The trace is filtered to remove all intermediate frames for internal functions.
+
+Also, DrResult overrides the `expecthook` to filter the stack trace in case of panic.
+
+#### `constructs_as_result`
+
+If you have a class that might raise an error in its constructor,
+you can mark it as `constructs_as_result`:
+
+```python
+@constructs_as_result
+class Reader:
+    def __init__(self, filename):
+        with open(filename) as f:
+            self.data = json.loads(f.read())
+```
+Creating an instance of this class will yield a `Result` that has to be unwrapped first.
+```python
+reader = Reader('/path/to/existing/file').unwrap() # Ok
+reader = Reader('/invalid/path/to/non/existing/file').unwrap() # panic!
+```
+
 ## Similar Projects
 
 For a less extreme approach on Rust's result type, see:
