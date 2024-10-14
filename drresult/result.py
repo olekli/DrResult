@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: MIT
 
 from typing import NoReturn, Optional, List
+import sys
 import traceback
 
 
@@ -122,8 +123,17 @@ def filter_traceback(e: BaseException) -> List[traceback.FrameSummary]:
     tb = traceback.extract_tb(e.__traceback__)
     return [
         frame
-        for frame in tb
-        if frame.name != 'unwrap_or_raise' and frame.name != 'drresult_returns_result_wrapper'
+        for index, frame in enumerate(tb)
+        if not (
+            frame.name == 'unwrap_or_raise'
+            or frame.name == 'drresult_returns_result_wrapper'
+            or frame.name == 'drresult_constructs_as_result_wrapper'
+            or (
+                frame.name == '__call__'
+                and (index + 1) < len(tb)
+                and tb[index + 1].name == 'drresult_constructs_as_result_wrapper'
+            )
+        )
     ]
 
 
@@ -135,3 +145,10 @@ def format_traceback(e: BaseException) -> str:
 
 def format_exception(e: BaseException) -> str:
     return ''.join(traceback.format_exception_only(e))[:-1]
+
+
+def excepthook(type, e, traceback):
+    print(f'{format_traceback(e)}{format_exception(e)}')
+
+
+sys.excepthook = excepthook

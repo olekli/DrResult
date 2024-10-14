@@ -18,6 +18,9 @@ def make_drresult_constructs_as_result_decorator[
         class Meta(Base):
             @returns_result(expects=expects, not_expects=not_expects)
             def __call__(cls, *args, **kwargs) -> Result[T]:
+                return cls.drresult_constructs_as_result_wrapper(*args, **kwargs)
+
+            def drresult_constructs_as_result_wrapper(cls, *args, **kwargs) -> Result[T]:
                 return Ok(super(Meta, cls).__call__(*args, **kwargs))
 
         WrapperBase = cls  # type: Any

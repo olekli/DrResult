@@ -3,7 +3,6 @@
 
 from types import TracebackType
 from typing import Any, Callable, NoReturn, Type, List
-import sys
 import traceback
 
 from drresult.result import Result, Err, format_exception, format_traceback
@@ -86,10 +85,3 @@ def returns_result[
         )
     else:
         return make_drresult_returns_result_decorator(**decorator_kwargs)
-
-
-def excepthook(type, e, traceback):
-    print(f'{format_traceback(e)}{format_exception(e)}')
-
-
-sys.excepthook = excepthook
