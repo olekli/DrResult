@@ -1,0 +1,46 @@
+name: Pytest Coverage Report
+
+on:
+  push:
+    branches: [ main ]  # Run on pushes to the main branch
+  pull_request:
+    branches: [ main ]  # Run on pull requests to the main branch
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Check out code
+      uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.12'  # Specify your Python version here
+
+    - name: Install Poetry
+      uses: snok/install-poetry@v1
+      with:
+        poetry-version: 1.8.3  # Specify the Poetry version you need
+
+    - name: Install dependencies
+      run: |
+        poetry install
+
+    - name: Run tests with coverage
+      run: |
+        poetry run pytest --cov=drresult  # Adjust the path if necessary
+
+    - name: Generate coverage report
+      run: |
+        poetry run coverage xml
+        poetry run coverage html
+
+    - name: Upload coverage report
+      uses: actions/upload-artifact@v3
+      with:
+        name: coverage-report
+        path: |
+          htmlcov
+          coverage.xml
