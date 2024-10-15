@@ -41,10 +41,10 @@ class gather_result[T]:
             case Panic():
                 return False
             case _ if isinstance(exc_value, self._not_expects):
-                raise Panic(exc_value)
+                raise Panic(exc_value) from None
             case _ if isinstance(exc_value, self._expects):
                 self._container.set(Err(exc_value))
             case _:
-                raise Panic(exc_value)
+                raise Panic(exc_value) from None
         self._container._finalized = True
         return True

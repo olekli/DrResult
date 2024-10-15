@@ -51,6 +51,18 @@ def test_equal_value_ok_err_is_not_equal():
     assert not (lhs == rhs)
 
 
+def test_equal_ok_is_not_equal_everything():
+    lhs = Ok('foo')
+    rhs = 'foo'
+    assert not (lhs == rhs)
+
+
+def test_equal_err_is_not_equal_everything():
+    lhs = Err(DummyException('foo'))
+    rhs = 'foo'
+    assert not (lhs == rhs)
+
+
 def test_equal_ok_has_identical_hash():
     lhs = Ok('foo')
     rhs = Ok('foo')
@@ -137,11 +149,33 @@ def test_ok_unwraps_value_not_raises():
     assert result.is_ok() and result.unwrap() == 'bar'
 
 
+def test_ok_unwraps_value_not_returns():
+    @returns_result()
+    def func() -> Result[str]:
+        result = Ok('foo')
+        result.unwrap_or_return()
+        return Ok('bar')
+
+    result = func()
+    assert result.is_ok() and result.unwrap() == 'bar'
+
+
 def test_ok_unwraps_value_not_raises_decorator_default():
     @returns_result
     def func() -> Result[str]:
         result = Ok('foo')
         result.unwrap_or_raise()
+        return Ok('bar')
+
+    result = func()
+    assert result.is_ok() and result.unwrap() == 'bar'
+
+
+def test_ok_unwraps_value_not_returns_decorator_default():
+    @returns_result
+    def func() -> Result[str]:
+        result = Ok('foo')
+        result.unwrap_or_return()
         return Ok('bar')
 
     result = func()
@@ -190,11 +224,37 @@ def test_err_unwraps_raises():
     )
 
 
-def test_err_unwraps_raises_assertion_when_not_specified():
+def test_err_unwraps_returns():
+    @returns_result(expects=[RuntimeError])
+    def func() -> Result[int]:
+        result = Err(RuntimeError('foo'))
+        result.unwrap_or_return()
+        return Ok(5)
+
+    result = func()
+    assert (
+        result.is_err()
+        and isinstance(result.unwrap_err(), RuntimeError)
+        and str(result.unwrap_err()) == 'foo'
+    )
+
+
+def test_err_unwraps_raises_panic_when_not_specified():
     @returns_result(expects=[FileNotFoundError, SyntaxError])
     def func() -> Result[int]:
         result = Err(RuntimeError('foo'))
         result.unwrap_or_raise()
+        return Ok(5)
+
+    with pytest.raises(Panic):
+        result = func()
+
+
+def test_err_unwraps_returns_panic_when_not_specified():
+    @returns_result(expects=[FileNotFoundError, SyntaxError])
+    def func() -> Result[int]:
+        result = Err(RuntimeError('foo'))
+        result.unwrap_or_return()
         return Ok(5)
 
     with pytest.raises(Panic):
@@ -349,7 +409,7 @@ def test_noexcept_returns_when_no_exception():
     assert result == 'bar'
 
 
-def test_noexcept_raises_assertion_on_exception():
+def test_noexcept_raises_panic_on_exception():
     @noexcept
     def func() -> str:
         raise RuntimeError('foo')
@@ -357,3 +417,17 @@ def test_noexcept_raises_assertion_on_exception():
 
     with pytest.raises(Panic):
         result = func()
+
+
+def test_noexcept_forwards_panic():
+    @noexcept
+    def func1() -> str:
+        raise RuntimeError('foo')
+        return 'bar'
+
+    @noexcept
+    def func2() -> str:
+        return func1()
+
+    with pytest.raises(Panic):
+        result = func2()

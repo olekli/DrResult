@@ -15,7 +15,7 @@ def noexcept[T](func: Callable[..., T]) -> Callable[..., T]:
         except Panic:
             raise
         except BaseException as e:
-            raise Panic(e)
+            raise Panic(e) from None
 
     return wrapper
 
@@ -56,11 +56,11 @@ def make_drresult_returns_result_decorator[
             except Panic:
                 raise
             except not_expects_tuple as e:
-                raise Panic(e)
+                raise Panic(e) from None
             except expects_tuple as e:
                 return Err(e)
             except BaseException as e:
-                raise Panic(e)
+                raise Panic(e) from None
 
         return drresult_returns_result_wrapper
 

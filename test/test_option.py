@@ -30,6 +30,17 @@ def test_some_is_not_none():
     assert not (lhs is rhs)
 
 
+def test_some_is_not_equal_anything():
+    lhs = Some('foo')
+    rhs = int(12)
+    assert not (lhs == rhs)
+
+
+def test_some_prints_correctly():
+    lhs = Some('foo')
+    assert str(lhs) == 'Some(foo)'
+
+
 def test_equal_some_has_identical_hash():
     lhs = Some('foo')
     rhs = Some('foo')

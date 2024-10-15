@@ -7,8 +7,8 @@ import traceback
 
 
 class BaseResult[T]:
-    def __init__(self, value: T):
-        self._value = value
+    def __init__(self):  # pragma: no cover
+        self._value: T
 
     def __str__(self) -> str:
         return self.__repr__()
@@ -21,8 +21,8 @@ class BaseResult[T]:
     def __hash__(self) -> int:
         return hash((self.__class__, self._value))
 
-    def is_ok(self) -> bool:
-        assert False
+    def is_ok(self) -> bool:  # pragma: no cover
+        return False
 
     def __bool__(self) -> bool:
         return self.is_ok()
@@ -152,7 +152,7 @@ def format_traceback_exception(e: BaseException) -> str:
 
 
 def excepthook(type, e, traceback):
-    print(f'{format_exception_traceback(e)}')
+    print(f'{format_traceback_exception(e)}')
 
 
 sys.excepthook = excepthook
@@ -164,7 +164,10 @@ class Panic(Exception):
         self.__traceback__ = self.unhandled_exception.__traceback__
 
     def __repr__(self) -> str:
-        return f'{format_traceback(self.unhandled_exception)}Panic: {format_exception(self.unhandled_exception)}'
+        return f'{format_exception(self.unhandled_exception)}'
+
+    def trace(self) -> str:
+        return f'{format_traceback(self)}Panic: {format_exception(self.unhandled_exception)}'
 
     def __str__(self) -> str:
         return self.__repr__()

@@ -1,8 +1,8 @@
 # Copyright 2024 Ole Kliemann
 # SPDX-License-Identifier: MIT
 
-from drresult import returns_result, constructs_as_result, log_panic, Panic
-from drresult.result import filter_traceback
+from drresult import returns_result, constructs_as_result, log_panic, Panic, Err
+from drresult.result import filter_traceback, excepthook
 
 import traceback
 import pytest
@@ -37,6 +37,10 @@ def test_traceback_on_panic():
     assert tb[2].name == 'f2'
     assert tb[3].name == 'f3'
 
+    msg = exc.trace()
+    print(msg)
+    assert 'Panic' in msg and 'f1' in msg and 'f2' in msg and 'f3' in msg
+
 
 def test_traceback_from_err():
     @returns_result()
@@ -60,6 +64,9 @@ def test_traceback_from_err():
     assert tb[0].name == 'f1'
     assert tb[1].name == 'f2'
     assert tb[2].name == 'f3'
+
+    msg = result.trace()
+    assert 'f1' in msg and 'f2' in msg and 'f3' in msg
 
 
 def test_traceback_on_panic_in_constructor():
@@ -143,3 +150,34 @@ def test_log_panic():
             result.unwrap_or_raise()
     assert logger.msg
     assert 'KeyError' in logger.msg and 'foo' in logger.msg
+
+
+def test_excepthook(capsys):
+    @returns_result()
+    def f1():
+        return f2().unwrap_or_raise()
+
+    @returns_result()
+    def f2():
+        return f3().unwrap_or_raise()
+
+    @returns_result()
+    def f3():
+        a = {}
+        raise SystemError('foo')
+        a['bar'] = 'baz'
+
+    exc = None
+    try:
+        result = f1()
+    except Panic as e:
+        exc = e
+
+    excepthook(None, exc, None)
+    captured = capsys.readouterr()
+    assert 'Panic' in captured.out
+    assert 'SystemError' in captured.out
+    assert 'foo' in captured.out
+    assert 'f3' in captured.out
+    assert 'f2' in captured.out
+    assert 'f1' in captured.out
