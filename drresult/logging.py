@@ -13,5 +13,5 @@ def log_panic(logger: logging.Logger):
         with gather_result(expects=[], not_expects=[BaseException]) as result:
             yield
     except Panic as e:
-        logger.critical(f'{e}')
+        logger.critical(f'{e.trace()}')
         raise

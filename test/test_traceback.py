@@ -143,13 +143,27 @@ def test_log_panic():
         def critical(self, msg):
             self.msg = msg
 
+    @returns_result()
+    def f1():
+        return f2().unwrap_or_raise()
+
+    @returns_result()
+    def f2():
+        return f3().unwrap_or_raise()
+
+    @returns_result()
+    def f3():
+        a = {}
+        raise SystemError('foo')
+        a['bar'] = 'baz'
+
     logger = DummyLogger()
     with pytest.raises(Panic):
         with log_panic(logger):
-            result = Err(KeyError('foo'))
-            result.unwrap_or_raise()
+            f1()
     assert logger.msg
-    assert 'KeyError' in logger.msg and 'foo' in logger.msg
+    assert 'SystemError' in logger.msg and 'foo' in logger.msg
+    assert 'f3' in logger.msg and 'f2' in logger.msg and 'f1' in logger.msg
 
 
 def test_excepthook(capsys):
