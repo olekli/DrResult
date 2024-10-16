@@ -128,6 +128,7 @@ def filter_traceback(e: BaseException) -> List[traceback.FrameSummary]:
             frame.name == 'unwrap_or_raise'
             or frame.name == 'drresult_returns_result_wrapper'
             or frame.name == 'drresult_constructs_as_result_wrapper'
+            or frame.name == 'log_panic'
             or (
                 frame.name == '__call__'
                 and (index + 1) < len(tb)

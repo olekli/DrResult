@@ -164,6 +164,7 @@ def test_log_panic():
     assert logger.msg
     assert 'SystemError' in logger.msg and 'foo' in logger.msg
     assert 'f3' in logger.msg and 'f2' in logger.msg and 'f1' in logger.msg
+    assert not 'in log_panic' in logger.msg
 
 
 def test_excepthook(capsys):
