@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "DrResult"
-version = "0.6.4"
+version = "0.6.5"
 description = ""
 authors = ["Ole Kliemann <mail@olekliemann.de>"]
 license = "MIT"

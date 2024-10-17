@@ -14,6 +14,7 @@ Functions:
     - log_panic: Context manager to log `Panic` exceptions using the provided logger.
 """
 
+
 @contextmanager
 def log_panic(logger: logging.Logger):
     """Context manager to log `Panic` exceptions.

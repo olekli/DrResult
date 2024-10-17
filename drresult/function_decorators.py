@@ -21,6 +21,7 @@ Constants:
     - not_expects_default: Default list of unexpected exceptions.
 """
 
+
 def noexcept[T](func: Callable[..., T]) -> Callable[..., T]:
     """Decorator to mark a function as not expecting any exceptions.
 
@@ -33,6 +34,7 @@ def noexcept[T](func: Callable[..., T]) -> Callable[..., T]:
     Raises:
         Panic: If an unexpected exception occurs.
     """
+
     def wrapper(*args: Any, **kwargs: Any) -> T:
         try:
             return func(*args, **kwargs)
@@ -42,6 +44,7 @@ def noexcept[T](func: Callable[..., T]) -> Callable[..., T]:
             raise Panic(e) from None
 
     return wrapper
+
 
 # Exception lists for internal use
 LanguageLevelExceptions: List[Type[BaseException]] = [
@@ -60,6 +63,7 @@ SystemLevelExceptions: List[Type[BaseException]] = [
 
 expects_default: List[Type[BaseException]] = [Exception]
 not_expects_default: List[Type[BaseException]] = LanguageLevelExceptions + SystemLevelExceptions
+
 
 def make_drresult_returns_result_decorator[
     T
@@ -97,6 +101,7 @@ def make_drresult_returns_result_decorator[
         return drresult_returns_result_wrapper
 
     return make_drresult_returns_result_wrapper
+
 
 def returns_result[
     T

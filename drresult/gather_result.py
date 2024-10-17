@@ -14,17 +14,9 @@ Classes:
     - gather_result: Context manager to capture exceptions as a `Result`.
 """
 
+
 class ResultContainer[T]:
-    """Container to hold a `Result` within a context.
-
-    Attributes:
-        _result (Result[T] | Result[None]): The result held.
-        _finalized (bool): Indicates if the result is finalized.
-
-    Methods:
-        set(result): Set the result.
-        get() -> Result[T] | Result[None]: Get the finalized result.
-    """
+    """Container to hold a `Result` within a context."""
 
     def __init__(self) -> None:
         self._result: Result[T] | Result[None] = Ok(None)
@@ -54,6 +46,7 @@ class ResultContainer[T]:
         assert self._finalized, "Cannot get result when not finalized"
         return self._result
 
+
 class gather_result[T]:
     """Context manager to capture exceptions and convert them into a `Result`.
 
@@ -62,11 +55,6 @@ class gather_result[T]:
             # Code that might raise exceptions
             result_container.set(Ok(value))
         result = result_container.get()
-
-    Attributes:
-        _expects (Tuple[Type[BaseException], ...]): Expected exceptions.
-        _not_expects (Tuple[Type[BaseException], ...]): Unexpected exceptions.
-        _container (ResultContainer[T]): The result container.
     """
 
     def __init__(
@@ -87,16 +75,7 @@ class gather_result[T]:
         return self._container
 
     def __exit__(self, exc_type, exc_value, traceback):
-        """Exit the context, handling exceptions.
-
-        Args:
-            exc_type: The exception type.
-            exc_value: The exception instance.
-            traceback: The traceback object.
-
-        Returns:
-            bool: True if the exception was handled, False otherwise.
-        """
+        """Exit the context, handling exceptions."""
         match exc_value:
             case None:
                 pass
