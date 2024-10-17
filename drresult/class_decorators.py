@@ -12,6 +12,7 @@ Decorators:
     - constructs_as_result: Wraps the construction of a class in a `Result` type.
 """
 
+
 def make_drresult_constructs_as_result_decorator[
     T
 ](
@@ -27,6 +28,7 @@ def make_drresult_constructs_as_result_decorator[
     Returns:
         Callable: A decorator for classes.
     """
+
     def make_drresult_constructs_as_result_wrapper(cls: Type[T]) -> Type[T]:
         Base = type(cls)  # type: Any
 

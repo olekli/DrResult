@@ -22,12 +22,9 @@ Functions:
     - excepthook: Custom exception hook to print formatted exceptions.
 """
 
-class BaseResult[T]:
-    """Base class for `Ok` and `Err` result types.
 
-    Attributes:
-        _value (T): The value held by the result.
-    """
+class BaseResult[T]:
+    """Base class for `Ok` and `Err` result types."""
 
     def __init__(self):  # pragma: no cover
         self._value: T
@@ -72,11 +69,7 @@ class BaseResult[T]:
 
 
 class Ok[T](BaseResult[T]):
-    """Represents a successful result.
-
-    Attributes:
-        _value (T): The successful value.
-    """
+    """Represents a successful result."""
 
     __match_args__ = ('value',)
 
@@ -183,11 +176,7 @@ class Ok[T](BaseResult[T]):
 
 
 class Err[E: BaseException](BaseResult[E]):
-    """Represents an error result.
-
-    Attributes:
-        _value (E): The exception representing the error.
-    """
+    """Represents an error result."""
 
     __match_args__ = ('error',)
 
@@ -304,15 +293,8 @@ class Err[E: BaseException](BaseResult[E]):
 type Result[T] = Ok[T] | Err[BaseException]
 """Type alias for `Result`, which can be an `Ok` or an `Err`."""
 
+
 def filter_traceback(e: BaseException) -> List[traceback.FrameSummary]:
-    """Filter the traceback to exclude internal frames.
-
-    Args:
-        e (BaseException): The exception to filter.
-
-    Returns:
-        List[traceback.FrameSummary]: The filtered traceback frames.
-    """
     tb = traceback.extract_tb(e.__traceback__)
     return [
         frame
@@ -330,52 +312,27 @@ def filter_traceback(e: BaseException) -> List[traceback.FrameSummary]:
         )
     ]
 
+
 def format_traceback(e: BaseException) -> str:
-    """Format the traceback of an exception.
-
-    Args:
-        e (BaseException): The exception to format.
-
-    Returns:
-        str: The formatted traceback string.
-    """
     new_tb_list = filter_traceback(e)
     trace_to_print = ''.join(traceback.format_list(new_tb_list))
     return trace_to_print
 
+
 def format_exception(e: BaseException) -> str:
-    """Format the exception message.
-
-    Args:
-        e (BaseException): The exception to format.
-
-    Returns:
-        str: The exception message.
-    """
     return ''.join(traceback.format_exception_only(e))[:-1]
 
+
 def format_traceback_exception(e: BaseException) -> str:
-    """Format the full traceback and exception message.
-
-    Args:
-        e (BaseException): The exception to format.
-
-    Returns:
-        str: The formatted traceback and exception message.
-    """
     return f'{format_traceback(e)}{format_exception(e)}'
 
-def excepthook(type, e, traceback):
-    """Custom exception hook to print formatted exceptions.
 
-    Args:
-        type: The exception type.
-        e (BaseException): The exception instance.
-        traceback: The traceback object.
-    """
+def excepthook(type, e, traceback):
     print(f'{format_traceback_exception(e)}')
 
+
 sys.excepthook = excepthook
+
 
 class Panic(Exception):
     """Exception raised for unexpected errors leading to program termination.
