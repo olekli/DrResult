@@ -30,7 +30,7 @@ jobs:
 
     - name: Run tests with coverage
       run: |
-        poetry run pytest --cov --cov-report=xml
+        poetry run pytest --cov=drresult --cov-report=xml
 
     - name: Upload results to Codecov
       uses: codecov/codecov-action@v4

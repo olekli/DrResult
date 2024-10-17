@@ -1,5 +1,7 @@
 ![tests](https://github.com/olekli/drresult/actions/workflows/pytest-coverage.yml/badge.svg)
 [![codecov](https://codecov.io/github/olekli/DrResult/branch/main/graph/badge.svg?token=WLSOABF6I6)](https://codecov.io/github/olekli/DrResult)
+[![Documentation Status](https://readthedocs.org/projects/drresult/badge/?version=latest)](https://drresult.readthedocs.io/en/latest/?badge=latest)
+[![PyPI version](https://badge.fury.io/py/DrResult.svg)](https://badge.fury.io/py/DrResult)
 
 # DrResult
 
