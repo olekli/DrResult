@@ -6,22 +6,69 @@ from typing import List, Type, Tuple
 from drresult.result import Result, Ok, Err, Panic
 from drresult.function_decorators import expects_default, not_expects_default
 
+"""
+This module provides a context manager `gather_result` to capture exceptions and convert them into a `Result`.
+
+Classes:
+    - ResultContainer: Container to hold the result within the context.
+    - gather_result: Context manager to capture exceptions as a `Result`.
+"""
 
 class ResultContainer[T]:
+    """Container to hold a `Result` within a context.
+
+    Attributes:
+        _result (Result[T] | Result[None]): The result held.
+        _finalized (bool): Indicates if the result is finalized.
+
+    Methods:
+        set(result): Set the result.
+        get() -> Result[T] | Result[None]: Get the finalized result.
+    """
+
     def __init__(self) -> None:
         self._result: Result[T] | Result[None] = Ok(None)
         self._finalized: bool = False
 
     def set(self, result: Result[T]) -> None:
+        """Set the result.
+
+        Args:
+            result (Result[T]): The result to set.
+
+        Raises:
+            AssertionError: If the result is already finalized.
+        """
         assert not self._finalized, "Cannot set result when already finalized"
         self._result = result
 
     def get(self) -> Result[T] | Result[None]:
+        """Get the finalized result.
+
+        Raises:
+            AssertionError: If the result is not finalized.
+
+        Returns:
+            Result[T] | Result[None]: The result.
+        """
         assert self._finalized, "Cannot get result when not finalized"
         return self._result
 
-
 class gather_result[T]:
+    """Context manager to capture exceptions and convert them into a `Result`.
+
+    Usage:
+        with gather_result() as result_container:
+            # Code that might raise exceptions
+            result_container.set(Ok(value))
+        result = result_container.get()
+
+    Attributes:
+        _expects (Tuple[Type[BaseException], ...]): Expected exceptions.
+        _not_expects (Tuple[Type[BaseException], ...]): Unexpected exceptions.
+        _container (ResultContainer[T]): The result container.
+    """
+
     def __init__(
         self,
         expects: List[Type[BaseException]] = expects_default,
@@ -32,9 +79,24 @@ class gather_result[T]:
         self._container: ResultContainer[T] = ResultContainer[T]()
 
     def __enter__(self):
+        """Enter the context.
+
+        Returns:
+            ResultContainer[T]: The result container.
+        """
         return self._container
 
     def __exit__(self, exc_type, exc_value, traceback):
+        """Exit the context, handling exceptions.
+
+        Args:
+            exc_type: The exception type.
+            exc_value: The exception instance.
+            traceback: The traceback object.
+
+        Returns:
+            bool: True if the exception was handled, False otherwise.
+        """
         match exc_value:
             case None:
                 pass
