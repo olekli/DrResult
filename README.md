@@ -1,3 +1,5 @@
+![tests](https://github.com/olekli/drresult/actions/workflows/pytest-coverage.yml/badge.svg)
+
 # DrResult
 
 More radical approach to Rust's `std::result` in Python.
