@@ -1,4 +1,5 @@
 ![tests](https://github.com/olekli/drresult/actions/workflows/pytest-coverage.yml/badge.svg)
+[![codecov](https://codecov.io/github/olekli/DrResult/branch/main/graph/badge.svg?token=WLSOABF6I6)](https://codecov.io/github/olekli/DrResult)
 
 # DrResult
 
